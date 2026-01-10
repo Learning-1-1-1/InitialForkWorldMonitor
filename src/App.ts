@@ -1,4 +1,4 @@
-import type { NewsItem, Monitor, PanelConfig, MapLayers } from '@/types';
+import type { NewsItem, Monitor, PanelConfig, MapLayers, RelatedAsset } from '@/types';
 import {
   FEEDS,
   INTEL_SOURCES,
@@ -511,14 +511,17 @@ export class App {
 
     // Create all panels
     const politicsPanel = new NewsPanel('politics', 'World / Geopolitical');
+    this.attachRelatedAssetHandlers(politicsPanel);
     this.newsPanels['politics'] = politicsPanel;
     this.panels['politics'] = politicsPanel;
 
     const techPanel = new NewsPanel('tech', 'Technology / AI');
+    this.attachRelatedAssetHandlers(techPanel);
     this.newsPanels['tech'] = techPanel;
     this.panels['tech'] = techPanel;
 
     const financePanel = new NewsPanel('finance', 'Financial News');
+    this.attachRelatedAssetHandlers(financePanel);
     this.newsPanels['finance'] = financePanel;
     this.panels['finance'] = financePanel;
 
@@ -543,10 +546,12 @@ export class App {
     this.panels['polymarket'] = predictionPanel;
 
     const govPanel = new NewsPanel('gov', 'Government / Policy');
+    this.attachRelatedAssetHandlers(govPanel);
     this.newsPanels['gov'] = govPanel;
     this.panels['gov'] = govPanel;
 
     const intelPanel = new NewsPanel('intel', 'Intel Feed');
+    this.attachRelatedAssetHandlers(intelPanel);
     this.newsPanels['intel'] = intelPanel;
     this.panels['intel'] = intelPanel;
 
@@ -554,22 +559,27 @@ export class App {
     this.panels['crypto'] = cryptoPanel;
 
     const middleeastPanel = new NewsPanel('middleeast', 'Middle East / MENA');
+    this.attachRelatedAssetHandlers(middleeastPanel);
     this.newsPanels['middleeast'] = middleeastPanel;
     this.panels['middleeast'] = middleeastPanel;
 
     const layoffsPanel = new NewsPanel('layoffs', 'Layoffs Tracker');
+    this.attachRelatedAssetHandlers(layoffsPanel);
     this.newsPanels['layoffs'] = layoffsPanel;
     this.panels['layoffs'] = layoffsPanel;
 
     const congressPanel = new NewsPanel('congress', 'Congress Trades');
+    this.attachRelatedAssetHandlers(congressPanel);
     this.newsPanels['congress'] = congressPanel;
     this.panels['congress'] = congressPanel;
 
     const aiPanel = new NewsPanel('ai', 'AI / ML');
+    this.attachRelatedAssetHandlers(aiPanel);
     this.newsPanels['ai'] = aiPanel;
     this.panels['ai'] = aiPanel;
 
     const thinktanksPanel = new NewsPanel('thinktanks', 'Think Tanks');
+    this.attachRelatedAssetHandlers(thinktanksPanel);
     this.newsPanels['thinktanks'] = thinktanksPanel;
     this.panels['thinktanks'] = thinktanksPanel;
 
@@ -651,6 +661,51 @@ export class App {
       .map((el) => (el as HTMLElement).dataset.panel)
       .filter((key): key is string => !!key);
     localStorage.setItem('panel-order', JSON.stringify(order));
+  }
+
+  private attachRelatedAssetHandlers(panel: NewsPanel): void {
+    panel.setRelatedAssetHandlers({
+      onRelatedAssetClick: (asset) => this.handleRelatedAssetClick(asset),
+      onRelatedAssetsFocus: (assets) => this.map?.highlightAssets(assets),
+      onRelatedAssetsClear: () => this.map?.highlightAssets(null),
+    });
+  }
+
+  private handleRelatedAssetClick(asset: RelatedAsset): void {
+    if (!this.map) return;
+
+    switch (asset.type) {
+      case 'pipeline':
+        this.map.enableLayer('pipelines');
+        this.mapLayers.pipelines = true;
+        saveToStorage(STORAGE_KEYS.mapLayers, this.mapLayers);
+        this.map.triggerPipelineClick(asset.id);
+        break;
+      case 'cable':
+        this.map.enableLayer('cables');
+        this.mapLayers.cables = true;
+        saveToStorage(STORAGE_KEYS.mapLayers, this.mapLayers);
+        this.map.triggerCableClick(asset.id);
+        break;
+      case 'datacenter':
+        this.map.enableLayer('datacenters');
+        this.mapLayers.datacenters = true;
+        saveToStorage(STORAGE_KEYS.mapLayers, this.mapLayers);
+        this.map.triggerDatacenterClick(asset.id);
+        break;
+      case 'base':
+        this.map.enableLayer('bases');
+        this.mapLayers.bases = true;
+        saveToStorage(STORAGE_KEYS.mapLayers, this.mapLayers);
+        this.map.triggerBaseClick(asset.id);
+        break;
+      case 'nuclear':
+        this.map.enableLayer('nuclear');
+        this.mapLayers.nuclear = true;
+        saveToStorage(STORAGE_KEYS.mapLayers, this.mapLayers);
+        this.map.triggerNuclearClick(asset.id);
+        break;
+    }
   }
 
   private makeDraggable(el: HTMLElement, key: string): void {

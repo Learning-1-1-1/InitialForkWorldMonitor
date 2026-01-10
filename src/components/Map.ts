@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 import * as topojson from 'topojson-client';
 import type { Topology, GeometryCollection } from 'topojson-specification';
-import type { MapLayers, Hotspot, NewsItem, Earthquake, InternetOutage } from '@/types';
+import type { MapLayers, Hotspot, NewsItem, Earthquake, InternetOutage, RelatedAsset, AssetType } from '@/types';
 import type { WeatherAlert } from '@/services/weather';
 import { getSeverityColor } from '@/services/weather';
 import {
@@ -79,6 +79,13 @@ export class MapComponent {
   private onLayerChange?: (layer: keyof MapLayers, enabled: boolean) => void;
   private layerZoomOverrides: Partial<Record<keyof MapLayers, boolean>> = {};
   private onStateChange?: (state: MapState) => void;
+  private highlightedAssets: Record<AssetType, Set<string>> = {
+    pipeline: new Set(),
+    cable: new Set(),
+    datacenter: new Set(),
+    base: new Set(),
+    nuclear: new Set(),
+  };
 
   constructor(container: HTMLElement, initialState: MapState) {
     this.container = container;
@@ -570,9 +577,10 @@ export class MapComponent {
         .y((d) => projection(d)?.[1] ?? 0)
         .curve(d3.curveCardinal);
 
+      const isHighlighted = this.highlightedAssets.cable.has(cable.id);
       const path = cableGroup
         .append('path')
-        .attr('class', 'cable-path')
+        .attr('class', `cable-path${isHighlighted ? ' asset-highlight asset-highlight-cable' : ''}`)
         .attr('d', lineGenerator(cable.points));
 
       path.append('title').text(cable.name);
@@ -604,9 +612,10 @@ export class MapComponent {
       const opacity = 0.85;
       const dashArray = pipeline.status === 'construction' ? '4,2' : 'none';
 
+      const isHighlighted = this.highlightedAssets.pipeline.has(pipeline.id);
       const path = pipelineGroup
         .append('path')
-        .attr('class', `pipeline-path pipeline-${pipeline.type} pipeline-${pipeline.status}`)
+        .attr('class', `pipeline-path pipeline-${pipeline.type} pipeline-${pipeline.status}${isHighlighted ? ' asset-highlight asset-highlight-pipeline' : ''}`)
         .attr('d', lineGenerator(pipeline.points))
         .attr('fill', 'none')
         .attr('stroke', color)
@@ -732,7 +741,8 @@ export class MapComponent {
         if (!pos) return;
 
         const div = document.createElement('div');
-        div.className = `nuclear-marker ${facility.status}`;
+        const isHighlighted = this.highlightedAssets.nuclear.has(facility.id);
+        div.className = `nuclear-marker ${facility.status}${isHighlighted ? ' asset-highlight asset-highlight-nuclear' : ''}`;
         div.style.left = `${pos[0]}px`;
         div.style.top = `${pos[1]}px`;
         div.title = `${facility.name} (${facility.type})`;
@@ -869,7 +879,8 @@ export class MapComponent {
         if (!pos) return;
 
         const div = document.createElement('div');
-        div.className = `base-marker ${base.type}`;
+        const isHighlighted = this.highlightedAssets.base.has(base.id);
+        div.className = `base-marker ${base.type}${isHighlighted ? ' asset-highlight asset-highlight-base' : ''}`;
         div.style.left = `${pos[0]}px`;
         div.style.top = `${pos[1]}px`;
 
@@ -1054,7 +1065,8 @@ export class MapComponent {
         if (!pos) return;
 
         const div = document.createElement('div');
-        div.className = `datacenter-marker ${dc.status}`;
+        const isHighlighted = this.highlightedAssets.datacenter.has(dc.id);
+        div.className = `datacenter-marker ${dc.status}${isHighlighted ? ' asset-highlight asset-highlight-datacenter' : ''}`;
         div.style.left = `${pos[0]}px`;
         div.style.top = `${pos[1]}px`;
 
@@ -1468,6 +1480,20 @@ export class MapComponent {
       this.onLayerChange?.(layer, true);
       this.render();
     }
+  }
+
+  public highlightAssets(assets: RelatedAsset[] | null): void {
+    (Object.keys(this.highlightedAssets) as AssetType[]).forEach((type) => {
+      this.highlightedAssets[type].clear();
+    });
+
+    if (assets) {
+      assets.forEach((asset) => {
+        this.highlightedAssets[asset.type].add(asset.id);
+      });
+    }
+
+    this.render();
   }
 
   private applyTransform(): void {

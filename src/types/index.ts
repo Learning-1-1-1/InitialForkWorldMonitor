@@ -42,6 +42,21 @@ export interface ClusteredEvent {
   velocity?: VelocityMetrics;
 }
 
+export type AssetType = 'pipeline' | 'cable' | 'datacenter' | 'base' | 'nuclear';
+
+export interface RelatedAsset {
+  id: string;
+  name: string;
+  type: AssetType;
+  distanceKm: number;
+}
+
+export interface RelatedAssetContext {
+  origin: { label: string; lat: number; lon: number };
+  types: AssetType[];
+  assets: RelatedAsset[];
+}
+
 export interface Sector {
   symbol: string;
   name: string;

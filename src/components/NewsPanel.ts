@@ -1,15 +1,29 @@
 import { Panel } from './Panel';
-import type { NewsItem, ClusteredEvent, DeviationLevel } from '@/types';
+import type { NewsItem, ClusteredEvent, DeviationLevel, RelatedAsset, RelatedAssetContext } from '@/types';
 import { formatTime } from '@/utils';
-import { clusterNews, enrichWithVelocity } from '@/services';
+import { clusterNews, enrichWithVelocity, getClusterAssetContext, getAssetLabel, MAX_DISTANCE_KM } from '@/services';
 
 export class NewsPanel extends Panel {
   private clusteredMode = true;
   private deviationEl: HTMLElement | null = null;
+  private relatedAssetContext = new Map<string, RelatedAssetContext>();
+  private onRelatedAssetClick?: (asset: RelatedAsset) => void;
+  private onRelatedAssetsFocus?: (assets: RelatedAsset[], originLabel: string) => void;
+  private onRelatedAssetsClear?: () => void;
 
   constructor(id: string, title: string) {
     super({ id, title, showCount: true });
     this.createDeviationIndicator();
+  }
+
+  public setRelatedAssetHandlers(options: {
+    onRelatedAssetClick?: (asset: RelatedAsset) => void;
+    onRelatedAssetsFocus?: (assets: RelatedAsset[], originLabel: string) => void;
+    onRelatedAssetsClear?: () => void;
+  }): void {
+    this.onRelatedAssetClick = options.onRelatedAssetClick;
+    this.onRelatedAssetsFocus = options.onRelatedAssetsFocus;
+    this.onRelatedAssetsClear = options.onRelatedAssetsClear;
   }
 
   private createDeviationIndicator(): void {
@@ -76,6 +90,7 @@ export class NewsPanel extends Panel {
   private renderClusters(clusters: ClusteredEvent[]): void {
     const totalItems = clusters.reduce((sum, c) => sum + c.sourceCount, 0);
     this.setCount(totalItems);
+    this.relatedAssetContext.clear();
 
     const html = clusters
       .map((cluster) => {
@@ -97,6 +112,31 @@ export class NewsPanel extends Panel {
           .map(s => `<span class="top-source tier-${s.tier}">${s.name}</span>`)
           .join('');
 
+        const assetContext = getClusterAssetContext(cluster);
+        if (assetContext && assetContext.assets.length > 0) {
+          this.relatedAssetContext.set(cluster.id, assetContext);
+        }
+
+        const relatedAssetsHtml = assetContext && assetContext.assets.length > 0
+          ? `
+            <div class="related-assets" data-cluster-id="${cluster.id}">
+              <div class="related-assets-header">
+                Related assets near ${assetContext.origin.label}
+                <span class="related-assets-range">(${MAX_DISTANCE_KM}km)</span>
+              </div>
+              <div class="related-assets-list">
+                ${assetContext.assets.map(asset => `
+                  <button class="related-asset" data-cluster-id="${cluster.id}" data-asset-id="${asset.id}" data-asset-type="${asset.type}">
+                    <span class="related-asset-type">${getAssetLabel(asset.type)}</span>
+                    <span class="related-asset-name">${asset.name}</span>
+                    <span class="related-asset-distance">${Math.round(asset.distanceKm)}km</span>
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+          `
+          : '';
+
         return `
       <div class="item clustered ${cluster.isAlert ? 'alert' : ''}" ${cluster.monitorColor ? `style="border-left-color: ${cluster.monitorColor}"` : ''} data-cluster-id="${cluster.id}">
         <div class="item-source">
@@ -111,11 +151,47 @@ export class NewsPanel extends Panel {
           <span class="top-sources">${topSourcesHtml}</span>
           <span class="item-time">${formatTime(cluster.lastUpdated)}</span>
         </div>
+        ${relatedAssetsHtml}
       </div>
     `;
       })
       .join('');
 
     this.setContent(html);
+    this.bindRelatedAssetEvents();
+  }
+
+  private bindRelatedAssetEvents(): void {
+    const containers = this.content.querySelectorAll<HTMLDivElement>('.related-assets');
+    containers.forEach((container) => {
+      const clusterId = container.dataset.clusterId;
+      if (!clusterId) return;
+      const context = this.relatedAssetContext.get(clusterId);
+      if (!context) return;
+
+      container.addEventListener('mouseenter', () => {
+        this.onRelatedAssetsFocus?.(context.assets, context.origin.label);
+      });
+
+      container.addEventListener('mouseleave', () => {
+        this.onRelatedAssetsClear?.();
+      });
+    });
+
+    const assetButtons = this.content.querySelectorAll<HTMLButtonElement>('.related-asset');
+    assetButtons.forEach((button) => {
+      button.addEventListener('click', (event) => {
+        event.stopPropagation();
+        const clusterId = button.dataset.clusterId;
+        const assetId = button.dataset.assetId;
+        const assetType = button.dataset.assetType as RelatedAsset['type'] | undefined;
+        if (!clusterId || !assetId || !assetType) return;
+        const context = this.relatedAssetContext.get(clusterId);
+        const asset = context?.assets.find(item => item.id === assetId && item.type === assetType);
+        if (asset) {
+          this.onRelatedAssetClick?.(asset);
+        }
+      });
+    });
   }
 }

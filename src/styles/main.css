@@ -478,6 +478,72 @@ body {
   border-left-color: var(--accent);
 }
 
+/* Related assets */
+.related-assets {
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: 8px;
+  background: rgba(7, 22, 17, 0.7);
+  border: 1px solid rgba(0, 255, 170, 0.2);
+}
+
+.related-assets-header {
+  font-size: 9px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.related-assets-range {
+  color: var(--accent);
+}
+
+.related-assets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.related-asset {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 6px;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: rgba(10, 34, 26, 0.8);
+  border: 1px solid rgba(0, 255, 170, 0.15);
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+}
+
+.related-asset:hover {
+  border-color: rgba(0, 255, 170, 0.5);
+  box-shadow: 0 0 10px rgba(0, 255, 170, 0.2);
+}
+
+.related-asset-type {
+  font-size: 8px;
+  text-transform: uppercase;
+  color: var(--accent);
+  letter-spacing: 0.4px;
+}
+
+.related-asset-name {
+  font-size: 10px;
+  color: var(--text);
+}
+
+.related-asset-distance {
+  font-size: 9px;
+  color: var(--text-dim);
+}
+
 /* Velocity */
 .velocity-badge {
   font-size: 8px;
@@ -1151,6 +1217,51 @@ body.playback-mode .status-dot {
 
 .pipeline-path.pipeline-products:hover {
   filter: drop-shadow(0 0 8px #ffd166) drop-shadow(0 0 15px #ffd166);
+}
+
+/* Related asset highlights */
+.asset-highlight {
+  animation: asset-pulse 1.2s ease-in-out infinite;
+}
+
+.base-marker.asset-highlight,
+.datacenter-marker.asset-highlight,
+.nuclear-marker.asset-highlight {
+  z-index: 30;
+  box-shadow: 0 0 12px rgba(0, 255, 170, 0.6);
+}
+
+.pipeline-path.asset-highlight {
+  stroke-width: 4.5 !important;
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.6));
+  animation: asset-pulse-glow 1.2s ease-in-out infinite;
+}
+
+.cable-path.asset-highlight {
+  stroke-width: 3.5;
+  opacity: 1;
+  filter: drop-shadow(0 0 10px rgba(0, 255, 170, 0.8));
+  animation: asset-pulse-glow 1.2s ease-in-out infinite;
+}
+
+@keyframes asset-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.7;
+  }
+}
+
+@keyframes asset-pulse-glow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
 }
 
 /* Pipeline popup header colors */
