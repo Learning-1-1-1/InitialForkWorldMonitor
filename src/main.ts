@@ -4,7 +4,6 @@ import './styles/dashboard.css';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import * as Sentry from '@sentry/browser';
 import { inject } from '@vercel/analytics';
-import { App } from './App';
 
 const sentryDsn = import.meta.env.VITE_SENTRY_DSN?.trim();
 
