@@ -22,74 +22,25 @@ function computeChangePct(now, past) {
   return ((now - past) / past) * 100;
 }
 
-function isValidNumericValue(val) {
-  if (val === '.' || val === '' || val == null) return false;
-  const n = typeof val === 'number' ? val : parseFloat(val);
-  return !Number.isNaN(n);
+function parseDataToPoints(json) {
+  return (json.data || [])
+    .filter((d) => d && d.value && d.value !== '.' && !Number.isNaN(parseFloat(d.value)))
+    .map((d) => ({ date: d.date, value: parseFloat(d.value) }))
+    .sort((a, b) => (b.date || '').localeCompare(a.date || ''));
 }
 
-function parseAlphaVantageResponse(raw) {
-  const points = [];
-  if (raw && typeof raw === 'object') {
-    const obj = raw;
-    if (Array.isArray(obj.data)) {
-      const validData = obj.data
-        .filter((d) => d && typeof d === 'object' && typeof d.date === 'string' && isValidNumericValue(d.value ?? d.close))
-        .map((d) => ({ date: d.date, value: parseFloat(d.value ?? d.close) }));
-      for (const { date, value } of validData) {
-        points.push({ timestamp: new Date(date), price: value });
-      }
-    }
-    const key = Object.keys(obj).find(
-      (k) => (k.startsWith('Time Series') || k === 'data') && k !== 'Meta Data' && k !== 'metadata',
-    );
-    const daily = key ? obj[key] : null;
-    if (daily && typeof daily === 'object' && !Array.isArray(daily)) {
-      for (const [dateStr, values] of Object.entries(daily)) {
-        if (!values || typeof values !== 'object') continue;
-        const close = values['4. close'] ?? values['5. close'] ?? values.close;
-        if (!isValidNumericValue(close)) continue;
-        const num = typeof close === 'string' ? parseFloat(close) : Number(close);
-        points.push({ timestamp: new Date(dateStr), price: num });
-      }
-    }
-  }
-  return points.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
-}
-
-function buildQuote(id, series) {
+function buildQuoteFromPoints(id, points) {
   const meta = META[id];
-  if (!series.length) {
-    return { id, displayName: meta.displayName, currentPrice: null, change1hPct: null, change4hPct: null, change24hPct: null };
-  }
-  const sorted = [...series].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
-  const nowPoint = sorted[sorted.length - 1];
-  if (!nowPoint) {
-    return { id, displayName: meta.displayName, currentPrice: null, change1hPct: null, change4hPct: null, change24hPct: null };
-  }
-  const oneDayMs = 24 * 3600 * 1000;
-  const findClosest = (deltaMs) => {
-    const target = nowPoint.timestamp.getTime() - deltaMs;
-    let best = null;
-    let bestDiff = Infinity;
-    for (const p of sorted) {
-      const diff = Math.abs(p.timestamp.getTime() - target);
-      if (diff < bestDiff) {
-        best = p;
-        bestDiff = diff;
-      }
-    }
-    return best;
-  };
-  const p1d = findClosest(1 * oneDayMs);
-  const p4d = findClosest(4 * oneDayMs);
+  const price = points[0]?.value ?? null;
+  const prev1d = points[1]?.value ?? null;
+  const prev4d = points[4]?.value ?? null;
   return {
     id,
     displayName: meta.displayName,
-    currentPrice: nowPoint.price,
+    currentPrice: price,
     change1hPct: null,
-    change4hPct: p4d ? computeChangePct(nowPoint.price, p4d.price) : null,
-    change24hPct: p1d ? computeChangePct(nowPoint.price, p1d.price) : null,
+    change4hPct: price != null && prev4d != null ? computeChangePct(price, prev4d) : null,
+    change24hPct: price != null && prev1d != null ? computeChangePct(price, prev1d) : null,
   };
 }
 
@@ -110,22 +61,19 @@ async function fetchOneCommodity(apiKey, id, opts = {}) {
     }
     if (!res.ok) {
       if (debug) console.error(`[commodities] Alpha Vantage HTTP ${res.status} for ${id}`);
-      return { points: [], raw: debug ? json : undefined };
+      return { quote: buildQuoteFromPoints(id, []), raw: debug ? json : undefined, pointsCount: 0 };
     }
     if (json && typeof json === 'object' && 'Note' in json) {
       if (debug) console.log(`[commodities] Alpha Vantage rate limit/note for ${id}:`, json.Note);
-      return { points: [], raw: debug ? json : undefined };
+      return { quote: buildQuoteFromPoints(id, []), raw: debug ? json : undefined, pointsCount: 0 };
     }
-    const dataKey = Object.keys(json).find(
-      (k) => (k !== 'Meta Data' && k !== 'metadata' && (k.startsWith('Time Series') || k === 'data')),
-    );
-    const raw = dataKey ? json[dataKey] : json;
-    const points = parseAlphaVantageResponse(raw ?? json);
-    if (debug) console.log(`[commodities] Parsed ${points.length} points for ${id}, dataKey=${dataKey}`);
-    return { points, raw: debug ? json : undefined };
+    const points = parseDataToPoints(json);
+    if (debug) console.log(`[commodities] Parsed ${points.length} points for ${id}`);
+    const quote = buildQuoteFromPoints(id, points);
+    return { quote, raw: debug ? json : undefined, pointsCount: points.length };
   } catch (err) {
     console.error(`[commodities] fetch error for ${id}:`, err.message);
-    return { points: [], raw: undefined };
+    return { quote: buildQuoteFromPoints(id, []), raw: undefined, pointsCount: 0 };
   }
 }
 
@@ -160,21 +108,20 @@ export default async function handler(req) {
   // In debug mode fetch only WTI and return raw Alpha Vantage response for inspection
   if (isDebug) {
     const result = await fetchOneCommodity(apiKey, 'WTI', { debug: true });
-    const quote = buildQuote('WTI', result.points);
     const cors = getCorsHeaders(req);
     return new Response(
       JSON.stringify({
         debug: true,
         alphaVantageRawResponse: result.raw,
-        parsedPointsCount: result.points.length,
-        builtQuote: quote,
+        parsedPointsCount: result.pointsCount,
+        builtQuote: result.quote,
       }, null, 2),
       { status: 200, headers: { 'Content-Type': 'application/json', ...cors } },
     );
   }
 
   const results = await Promise.all(COMMODITY_IDS.map((id) => fetchOneCommodity(apiKey, id)));
-  const quotes = COMMODITY_IDS.map((id, i) => buildQuote(id, (results[i] && results[i].points) || []));
+  const quotes = results.map((r) => r.quote);
   const withData = quotes.filter((q) => q.currentPrice != null).length;
   console.log('[commodities] fetched', quotes.length, 'commodities,', withData, 'with price data');
 
