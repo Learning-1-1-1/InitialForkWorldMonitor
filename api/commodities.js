@@ -92,7 +92,8 @@ function buildQuote(id, series) {
   };
 }
 
-async function fetchOneCommodity(apiKey, id) {
+async function fetchOneCommodity(apiKey, id, opts = {}) {
+  const { debug = false } = opts;
   const meta = META[id];
   const url = new URL(ALPHA_BASE);
   url.searchParams.set('function', meta.alphaFunction);
@@ -101,16 +102,29 @@ async function fetchOneCommodity(apiKey, id) {
   url.searchParams.set('datatype', 'json');
   try {
     const res = await fetch(url.toString());
-    if (!res.ok) return [];
     const json = await res.json();
-    if (json && typeof json === 'object' && 'Note' in json) return [];
+    if (debug) {
+      console.log(`[commodities] Alpha Vantage raw response for ${id}:`, JSON.stringify(json).slice(0, 500));
+      console.log(`[commodities] Alpha Vantage response keys:`, json && typeof json === 'object' ? Object.keys(json) : 'not object');
+    }
+    if (!res.ok) {
+      if (debug) console.error(`[commodities] Alpha Vantage HTTP ${res.status} for ${id}`);
+      return { points: [], raw: debug ? json : undefined };
+    }
+    if (json && typeof json === 'object' && 'Note' in json) {
+      if (debug) console.log(`[commodities] Alpha Vantage rate limit/note for ${id}:`, json.Note);
+      return { points: [], raw: debug ? json : undefined };
+    }
     const dataKey = Object.keys(json).find(
       (k) => (k !== 'Meta Data' && k !== 'metadata' && (k.startsWith('Time Series') || k === 'data')),
     );
     const raw = dataKey ? json[dataKey] : json;
-    return parseAlphaVantageResponse(raw ?? json);
-  } catch {
-    return [];
+    const points = parseAlphaVantageResponse(raw ?? json);
+    if (debug) console.log(`[commodities] Parsed ${points.length} points for ${id}, dataKey=${dataKey}`);
+    return { points, raw: debug ? json : undefined };
+  } catch (err) {
+    console.error(`[commodities] fetch error for ${id}:`, err.message);
+    return { points: [], raw: undefined };
   }
 }
 
@@ -127,15 +141,41 @@ export default async function handler(req) {
   }
 
   const apiKey = process.env.VITE_ALPHAVANTAGEAPI || process.env.ALPHAVANTAGEAPI || '';
+  const isDebug = new URL(req.url || '', 'http://x').searchParams.get('debug') === '1';
+
+  if (isDebug) {
+    console.log('[commodities] debug=1, apiKey present:', Boolean(apiKey), 'key length:', apiKey ? apiKey.length : 0);
+  }
+
   if (!apiKey) {
+    const body = { error: 'Missing API key', quotes: [] };
+    if (isDebug) body.debug = { message: 'Set VITE_ALPHAVANTAGEAPI or ALPHAVANTAGEAPI in Vercel env' };
+    return new Response(JSON.stringify(body), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', ...getCorsHeaders(req) },
+    });
+  }
+
+  // In debug mode fetch only WTI and return raw Alpha Vantage response for inspection
+  if (isDebug) {
+    const result = await fetchOneCommodity(apiKey, 'WTI', { debug: true });
+    const quote = buildQuote('WTI', result.points);
+    const cors = getCorsHeaders(req);
     return new Response(
-      JSON.stringify({ error: 'Missing API key', quotes: [] }),
-      { status: 200, headers: { 'Content-Type': 'application/json', ...getCorsHeaders(req) } },
+      JSON.stringify({
+        debug: true,
+        alphaVantageRawResponse: result.raw,
+        parsedPointsCount: result.points.length,
+        builtQuote: quote,
+      }, null, 2),
+      { status: 200, headers: { 'Content-Type': 'application/json', ...cors } },
     );
   }
 
   const results = await Promise.all(COMMODITY_IDS.map((id) => fetchOneCommodity(apiKey, id)));
-  const quotes = COMMODITY_IDS.map((id, i) => buildQuote(id, results[i] || []));
+  const quotes = COMMODITY_IDS.map((id, i) => buildQuote(id, (results[i] && results[i].points) || []));
+  const withData = quotes.filter((q) => q.currentPrice != null).length;
+  console.log('[commodities] fetched', quotes.length, 'commodities,', withData, 'with price data');
 
   const cors = getCorsHeaders(req);
   return new Response(JSON.stringify(quotes), {
