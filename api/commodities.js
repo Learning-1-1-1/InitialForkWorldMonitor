@@ -120,7 +120,15 @@ export default async function handler(req) {
     );
   }
 
-  const results = await Promise.all(COMMODITY_IDS.map((id) => fetchOneCommodity(apiKey, id)));
+  const delayMs = 15000;
+  const results = [];
+  for (let i = 0; i < COMMODITY_IDS.length; i++) {
+    const result = await fetchOneCommodity(apiKey, COMMODITY_IDS[i]);
+    results.push(result);
+    if (i < COMMODITY_IDS.length - 1) {
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+  }
   const quotes = results.map((r) => r.quote);
   const withData = quotes.filter((q) => q.currentPrice != null).length;
   console.log('[commodities] fetched', quotes.length, 'commodities,', withData, 'with price data');
