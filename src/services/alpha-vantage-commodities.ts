@@ -41,7 +41,7 @@ function computeChangePct(now: number, past: number | null): number | null {
   return ((now - past) / past) * 100;
 }
 
-export async function fetchCommodityTimeSeries(id: CommodityId): Promise<TimeSeriesPoint[]> {
+export async function fetchCommodityTimeSeries(_id: CommodityId): Promise<TimeSeriesPoint[]> {
   if (!ALPHA_VANTAGE_API_KEY || ALPHA_VANTAGE_API_KEY === ALPHA_VANTAGE_API_KEY_PLACEHOLDER) {
     const base = 100 + Math.random() * 20;
     const now = Date.now();
@@ -72,7 +72,18 @@ export function buildCommodityQuoteFromSeries(id: CommodityId, series: TimeSerie
   }
 
   const sorted = [...series].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
-  const nowPoint = sorted[sorted.length - 1];
+  const nowPoint = sorted.at(-1);
+  if (!nowPoint) {
+    return {
+      id,
+      displayName: meta.displayName,
+      currentPrice: null,
+      change1hPct: null,
+      change4hPct: null,
+      change24hPct: null,
+    };
+  }
+
   const nowTs = nowPoint.timestamp.getTime();
 
   const findClosest = (deltaMs: number): TimeSeriesPoint | null => {
