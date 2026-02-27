@@ -181,14 +181,22 @@ export function buildCommodityQuoteFromSeries(id: CommodityId, series: TimeSerie
 }
 
 export async function getAllCommodityQuotesMock(): Promise<CommodityQuote[]> {
-  const ids: CommodityId[] = ['WTI', 'BRENT', 'NATGAS', 'GOLD', 'SILVER', 'COPPER', 'WHEAT'];
+  try {
+    const res = await fetch('/api/commodities');
+    if (res.ok) {
+      const quotes = (await res.json()) as CommodityQuote[];
+      if (Array.isArray(quotes) && quotes.length > 0) return quotes;
+    }
+  } catch {
+    // Fall through to mock when API unavailable (e.g. local dev without proxy)
+  }
 
+  const ids: CommodityId[] = ['WTI', 'BRENT', 'NATGAS', 'GOLD', 'SILVER', 'COPPER', 'WHEAT'];
   const seriesById = await Promise.all(
     ids.map(async (id) => {
       const s = await fetchCommodityTimeSeries(id);
       return { id, series: s };
     }),
   );
-
   return seriesById.map(({ id, series }) => buildCommodityQuoteFromSeries(id, series));
 }
