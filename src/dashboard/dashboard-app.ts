@@ -75,13 +75,12 @@ export async function initDashboardApp(containerId: string): Promise<void> {
       content.innerHTML = `<div class="dashboard-content-inner dashboard-content-markets">${buildMarketsTableHtml(quotes)}</div>`;
     } else if (currentSection === 'intel') {
       content.innerHTML = `
-        <div class="dashboard-content-inner dashboard-content-iframe">
-          <iframe
-            id="dashboard-intel-iframe"
-            src="https://worldmonitor.app"
-            title="WorldMonitor Global Intelligence"
-            class="dashboard-iframe"
-          ></iframe>
+        <div class="dashboard-content-inner dashboard-content-intel">
+          <div class="dashboard-intel-card">
+            <h2 class="dashboard-intel-title">Global Intelligence</h2>
+            <p class="dashboard-intel-desc">Real-time global intelligence dashboard — news, map, and signals from WorldMonitor.</p>
+            <a href="https://worldmonitor.app" target="_blank" rel="noopener noreferrer" class="dashboard-intel-btn">Open WorldMonitor</a>
+          </div>
         </div>`;
     } else if (currentSection === 'correlations') {
       content.innerHTML = '<div class="dashboard-content-inner prediction-tab-placeholder">Correlations section – to be implemented.</div>';

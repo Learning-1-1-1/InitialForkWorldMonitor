@@ -204,20 +204,10 @@ if (urlParams.get('settings') === '1') {
     }
   );
 } else {
-  const path = location.pathname || '/';
-  if (path.startsWith('/dashboard')) {
-    void import('./dashboard/dashboard-app').then((m) =>
-      m.initDashboardApp('app').then(() => clearChunkReloadGuard(chunkReloadStorageKey)).catch(console.error),
-    );
-  } else {
-    const app = new App('app');
-    app
-      .init()
-      .then(() => {
-        clearChunkReloadGuard(chunkReloadStorageKey);
-      })
-      .catch(console.error);
-  }
+  // Root and all main routes load the Commodity Prediction Dashboard (WorldMonitor is only via Global Intelligence tab).
+  void import('./dashboard/dashboard-app').then((m) =>
+    m.initDashboardApp('app').then(() => clearChunkReloadGuard(chunkReloadStorageKey)).catch(console.error),
+  );
 }
 
 // Debug helpers for geo-convergence testing (remove in production)
