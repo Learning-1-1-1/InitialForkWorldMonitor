@@ -166,10 +166,9 @@ export function buildCommodityQuoteFromSeries(id: CommodityId, series: TimeSerie
     return best;
   };
 
-  // Alpha Vantage returns daily data; use 1d, 4d, 24d ago for changes
+  // Alpha Vantage returns daily data; use 1d and 4d ago for Δ 24h and Δ 4h
   const p1d = findClosest(1 * oneDayMs);
   const p4d = findClosest(4 * oneDayMs);
-  const p24d = findClosest(24 * oneDayMs);
 
   return {
     id,
