@@ -22,20 +22,22 @@ function computeChangePct(now, past) {
   return ((now - past) / past) * 100;
 }
 
+function isValidNumericValue(val) {
+  if (val === '.' || val === '' || val == null) return false;
+  const n = typeof val === 'number' ? val : parseFloat(val);
+  return !Number.isNaN(n);
+}
+
 function parseAlphaVantageResponse(raw) {
   const points = [];
   if (raw && typeof raw === 'object') {
     const obj = raw;
     if (Array.isArray(obj.data)) {
-      for (const row of obj.data) {
-        if (row && typeof row === 'object') {
-          const dateStr = typeof row.date === 'string' ? row.date : null;
-          const val = row.value ?? row.close;
-          const num = typeof val === 'number' ? val : typeof val === 'string' ? parseFloat(val) : NaN;
-          if (dateStr && !Number.isNaN(num)) {
-            points.push({ timestamp: new Date(dateStr), price: num });
-          }
-        }
+      const validData = obj.data
+        .filter((d) => d && typeof d === 'object' && typeof d.date === 'string' && isValidNumericValue(d.value ?? d.close))
+        .map((d) => ({ date: d.date, value: parseFloat(d.value ?? d.close) }));
+      for (const { date, value } of validData) {
+        points.push({ timestamp: new Date(date), price: value });
       }
     }
     const key = Object.keys(obj).find(
@@ -46,10 +48,9 @@ function parseAlphaVantageResponse(raw) {
       for (const [dateStr, values] of Object.entries(daily)) {
         if (!values || typeof values !== 'object') continue;
         const close = values['4. close'] ?? values['5. close'] ?? values.close;
+        if (!isValidNumericValue(close)) continue;
         const num = typeof close === 'string' ? parseFloat(close) : Number(close);
-        if (!Number.isNaN(num)) {
-          points.push({ timestamp: new Date(dateStr), price: num });
-        }
+        points.push({ timestamp: new Date(dateStr), price: num });
       }
     }
   }
