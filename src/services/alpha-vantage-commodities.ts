@@ -72,7 +72,7 @@ export function buildCommodityQuoteFromSeries(id: CommodityId, series: TimeSerie
   }
 
   const sorted = [...series].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
-  const nowPoint = sorted.at(-1);
+  const nowPoint = sorted[sorted.length - 1];
   if (!nowPoint) {
     return {
       id,
