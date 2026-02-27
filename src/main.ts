@@ -1,5 +1,6 @@
 import './styles/base-layer.css';
 import './styles/happy-theme.css';
+import './styles/dashboard.css';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import * as Sentry from '@sentry/browser';
 import { inject } from '@vercel/analytics';
@@ -203,13 +204,20 @@ if (urlParams.get('settings') === '1') {
     }
   );
 } else {
-  const app = new App('app');
-  app
-    .init()
-    .then(() => {
-      clearChunkReloadGuard(chunkReloadStorageKey);
-    })
-    .catch(console.error);
+  const path = location.pathname || '/';
+  if (path.startsWith('/dashboard')) {
+    void import('./dashboard/dashboard-app').then((m) =>
+      m.initDashboardApp('app').then(() => clearChunkReloadGuard(chunkReloadStorageKey)).catch(console.error),
+    );
+  } else {
+    const app = new App('app');
+    app
+      .init()
+      .then(() => {
+        clearChunkReloadGuard(chunkReloadStorageKey);
+      })
+      .catch(console.error);
+  }
 }
 
 // Debug helpers for geo-convergence testing (remove in production)
