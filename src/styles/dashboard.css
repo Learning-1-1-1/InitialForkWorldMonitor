@@ -1,106 +1,167 @@
-.prediction-dashboard-root {
-  min-height: 100vh;
-  padding: 16px 20px 24px;
+/* Dashboard root: full viewport, dark */
+.dashboard-root {
+  position: fixed;
+  inset: 0;
   background: var(--bg, #05090a);
   color: var(--fg, #e5e7eb);
   display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.prediction-dashboard-header {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.3);
-  padding-bottom: 10px;
-}
-
-.prediction-dashboard-title {
-  font-size: 1.3rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-}
-
-.prediction-dashboard-subtitle {
-  font-size: 0.9rem;
-  color: rgba(148, 163, 184, 0.9);
-  max-width: 720px;
-}
-
-.prediction-dashboard-nav {
-  margin-left: auto;
-  display: inline-flex;
-  gap: 8px;
-  align-items: center;
-}
-
-.prediction-dashboard-link {
-  border-radius: 999px;
-  border: 1px solid rgba(148, 163, 184, 0.4);
-  padding: 4px 10px;
-  font-size: 0.8rem;
-  color: inherit;
-  text-decoration: none;
-  background: radial-gradient(circle at top left, rgba(56, 189, 248, 0.12), transparent 55%);
-  transition: background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
-}
-
-.prediction-dashboard-link:hover {
-  border-color: rgba(94, 234, 212, 0.8);
-  background: radial-gradient(circle at top left, rgba(45, 212, 191, 0.18), transparent 60%);
-  transform: translateY(-0.5px);
-}
-
-.prediction-dashboard-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.prediction-tabs-root {
-  border-radius: 8px;
-  border: 1px solid rgba(51, 65, 85, 0.9);
-  background: radial-gradient(circle at top left, rgba(15, 118, 110, 0.25), rgba(15, 23, 42, 1));
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.9);
   overflow: hidden;
 }
 
-.prediction-tabs-header {
-  display: flex;
-  border-bottom: 1px solid rgba(51, 65, 85, 0.9);
-  background: linear-gradient(to right, rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.95));
-}
-
-.prediction-tab-btn {
-  flex: 1;
-  padding: 8px 10px;
-  border: none;
-  background: transparent;
-  color: rgba(148, 163, 184, 0.9);
-  font-size: 0.85rem;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
+/* Hamburger: fixed top-left, always visible */
+.dashboard-hamburger {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 1001;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 1.4rem;
+  line-height: 1;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.95);
+  color: rgba(148, 163, 184, 0.95);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.dashboard-hamburger:hover {
+  background: rgba(30, 41, 59, 0.95);
+  border-color: rgba(94, 234, 212, 0.5);
+  color: #e5e7eb;
+}
+
+/* Sidebar: retractable from the left */
+.dashboard-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  width: 240px;
+  height: 100%;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.95));
+  border-right: 1px solid rgba(51, 65, 85, 0.9);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(-100%);
+  transition: transform 0.2s ease;
+}
+
+.dashboard-root.sidebar-open .dashboard-sidebar {
+  transform: translateX(0);
+}
+
+.dashboard-nav {
+  flex: 1;
+  padding: 60px 0 12px;
+  display: flex;
+  flex-direction: column;
   gap: 4px;
 }
 
-.prediction-tab-btn.active {
+.dashboard-nav-item {
+  padding: 10px 16px;
+  margin: 0 8px;
+  border-radius: 6px;
+  color: rgba(148, 163, 184, 0.95);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.dashboard-nav-item:hover {
+  background: rgba(51, 65, 85, 0.6);
   color: #e5e7eb;
-  border-bottom-color: rgba(96, 165, 250, 1);
-  background: radial-gradient(circle at top, rgba(37, 99, 235, 0.3), transparent 65%);
 }
 
-.prediction-tab-btn:hover {
-  color: #f9fafb;
+.dashboard-nav-item.active {
+  background: rgba(56, 189, 248, 0.15);
+  color: #e5e7eb;
+  border-left: 3px solid rgba(96, 165, 250, 1);
 }
 
-.prediction-tabs-body {
-  padding: 12px 14px 14px;
+.dashboard-sidebar-footer {
+  padding: 12px 16px;
+  border-top: 1px solid rgba(51, 65, 85, 0.9);
 }
 
+.dashboard-back-link {
+  display: block;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: rgba(148, 163, 184, 0.9);
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.dashboard-back-link:hover {
+  background: rgba(51, 65, 85, 0.6);
+  color: #e5e7eb;
+}
+
+/* Main content: 100% when sidebar closed */
+.dashboard-content {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  overflow: auto;
+  margin-left: 0;
+  transition: margin-left 0.2s ease;
+}
+
+.dashboard-root.sidebar-open .dashboard-content {
+  margin-left: 240px;
+}
+
+.dashboard-content-inner {
+  width: 100%;
+  min-height: 100%;
+  padding: 16px 20px 24px;
+}
+
+.dashboard-content-markets {
+  padding-top: 56px;
+}
+
+.dashboard-content-iframe {
+  padding: 0;
+  height: 100%;
+}
+
+/* Iframe: full height and width */
+.dashboard-iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: calc(100vh - 0px);
+  border: none;
+  background: #05090a;
+}
+
+.dashboard-content-iframe .dashboard-iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+}
+
+.dashboard-content-iframe {
+  position: relative;
+  height: 100%;
+  min-height: 100vh;
+}
+
+/* Markets table (reuse existing styles) */
 .prediction-markets {
   width: 100%;
   overflow-x: auto;
@@ -149,7 +210,7 @@
 .prediction-tab-placeholder {
   font-size: 0.85rem;
   color: rgba(148, 163, 184, 0.9);
-  padding: 8px 4px;
+  padding: 24px 16px;
 }
 
 .change-up {
@@ -161,15 +222,27 @@
 }
 
 @media (max-width: 768px) {
-  .prediction-dashboard-root {
+  .dashboard-hamburger {
+    top: 8px;
+    left: 8px;
+    width: 40px;
+    height: 40px;
+    font-size: 1.25rem;
+  }
+
+  .dashboard-sidebar {
+    width: 220px;
+  }
+
+  .dashboard-root.sidebar-open .dashboard-content {
+    margin-left: 220px;
+  }
+
+  .dashboard-content-inner {
     padding: 12px;
   }
 
-  .prediction-dashboard-title {
-    font-size: 1.1rem;
-  }
-
-  .prediction-tabs-body {
-    padding: 10px;
+  .dashboard-content-markets {
+    padding-top: 52px;
   }
 }
