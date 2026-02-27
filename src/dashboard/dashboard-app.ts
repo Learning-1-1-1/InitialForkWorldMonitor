@@ -13,10 +13,10 @@ export async function initDashboardApp(containerId: string): Promise<void> {
       <header class="prediction-dashboard-header">
         <h1 class="prediction-dashboard-title">Commodity Prediction Dashboard</h1>
         <p class="prediction-dashboard-subtitle">
-          Analyse des marchés de commodités, intelligence mondiale, corrélations et prédictions.
+          Commodity markets analysis, global intelligence, correlations and predictions.
         </p>
         <div class="prediction-dashboard-nav">
-          <a href="/" class="prediction-dashboard-link">← Retour à WorldMonitor</a>
+          <a href="/" class="prediction-dashboard-link">← Back to WorldMonitor</a>
         </div>
       </header>
       <main class="prediction-dashboard-main">

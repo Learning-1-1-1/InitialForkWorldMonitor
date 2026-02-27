@@ -27,13 +27,13 @@ export interface TimeSeriesPoint {
 }
 
 const COMMODITY_META: Record<CommodityId, { displayName: string; alphaSymbol: string }> = {
-  WTI: { displayName: 'Pétrole WTI', alphaSymbol: 'WTI' },
-  BRENT: { displayName: 'Pétrole Brent', alphaSymbol: 'BRENT' },
-  NATGAS: { displayName: 'Gaz naturel', alphaSymbol: 'NATURAL_GAS' },
-  GOLD: { displayName: 'Or', alphaSymbol: 'GOLD' },
-  SILVER: { displayName: 'Argent', alphaSymbol: 'SILVER' },
-  COPPER: { displayName: 'Cuivre', alphaSymbol: 'COPPER' },
-  WHEAT: { displayName: 'Blé', alphaSymbol: 'WHEAT' },
+  WTI: { displayName: 'WTI Crude', alphaSymbol: 'WTI' },
+  BRENT: { displayName: 'Brent Crude', alphaSymbol: 'BRENT' },
+  NATGAS: { displayName: 'Natural Gas', alphaSymbol: 'NATURAL_GAS' },
+  GOLD: { displayName: 'Gold', alphaSymbol: 'GOLD' },
+  SILVER: { displayName: 'Silver', alphaSymbol: 'SILVER' },
+  COPPER: { displayName: 'Copper', alphaSymbol: 'COPPER' },
+  WHEAT: { displayName: 'Wheat', alphaSymbol: 'WHEAT' },
 };
 
 function computeChangePct(now: number, past: number | null): number | null {

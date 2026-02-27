@@ -11,10 +11,10 @@ export class PredictionTabsPanel extends Panel {
   constructor() {
     super({
       id: 'prediction-tabs',
-      title: t('panels.predictionTabs') || 'Prédiction Commodités',
+      title: t('panels.predictionTabs') || 'Commodity Prediction',
       infoTooltip:
         t('components.predictionTabs.infoTooltip') ||
-        'Outil de prédiction basé sur les événements mondiaux en temps réel.',
+        'Prediction tool based on real-time global events.',
     });
 
     this.renderTabsSkeleton();
@@ -32,10 +32,10 @@ export class PredictionTabsPanel extends Panel {
     const html = `
       <div class="prediction-tabs-root">
         <div class="prediction-tabs-header">
-          ${this.renderTabButton('markets', 'Marchés')}
-          ${this.renderTabButton('intel', 'Intelligence mondiale')}
-          ${this.renderTabButton('correlations', 'Corrélations')}
-          ${this.renderTabButton('predictions', 'Prédictions')}
+          ${this.renderTabButton('markets', 'Markets')}
+          ${this.renderTabButton('intel', 'Global Intelligence')}
+          ${this.renderTabButton('correlations', 'Correlations')}
+          ${this.renderTabButton('predictions', 'Predictions')}
         </div>
         <div class="prediction-tabs-body" data-tab-body>
           ${this.renderMarketsContent()}
@@ -86,13 +86,13 @@ export class PredictionTabsPanel extends Panel {
       body.innerHTML = this.renderMarketsContent();
     } else if (this.activeTab === 'intel') {
       body.innerHTML =
-        '<div class="prediction-tab-placeholder">Section Intelligence mondiale – à implémenter.</div>';
+        '<div class="prediction-tab-placeholder">Global Intelligence section – to be implemented.</div>';
     } else if (this.activeTab === 'correlations') {
       body.innerHTML =
-        '<div class="prediction-tab-placeholder">Section Corrélations – à implémenter.</div>';
+        '<div class="prediction-tab-placeholder">Correlations section – to be implemented.</div>';
     } else if (this.activeTab === 'predictions') {
       body.innerHTML =
-        '<div class="prediction-tab-placeholder">Section Prédictions – à implémenter.</div>';
+        '<div class="prediction-tab-placeholder">Predictions section – to be implemented.</div>';
     }
   }
 
@@ -106,7 +106,7 @@ export class PredictionTabsPanel extends Panel {
   private renderMarketsContent(): string {
     if (!this.latestQuotes.length) {
       return `<div class="prediction-markets-empty">
-        Aucune donnée de marché pour l'instant (service Alpha Vantage en mode maquette).
+        No market data available yet (Alpha Vantage service in mock mode).
       </div>`;
     }
 
@@ -137,8 +137,8 @@ export class PredictionTabsPanel extends Panel {
         <table class="prediction-markets-table">
           <thead>
             <tr>
-              <th>Commodité</th>
-              <th>Prix actuel</th>
+              <th>Commodity</th>
+              <th>Current price</th>
               <th>Δ 1h</th>
               <th>Δ 4h</th>
               <th>Δ 24h</th>
@@ -149,8 +149,8 @@ export class PredictionTabsPanel extends Panel {
           </tbody>
         </table>
         <div class="prediction-markets-legend">
-          <span class="legend-up">▲ hausse</span>
-          <span class="legend-down">▼ baisse</span>
+          <span class="legend-up">▲ up</span>
+          <span class="legend-down">▼ down</span>
         </div>
       </div>
     `;
